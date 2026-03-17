@@ -1,0 +1,63 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --stone-dark: #655858;
+  --stone-light: #9B9393;
+  --stone-bg: #f5f5f5;
+  --stone-heading: #374151;
+}
+
+body {
+  font-family: "Inter", sans-serif;
+  font-optical-sizing: auto;
+}
+
+.no-scroll {
+    scrollbar-width: none !important; /* Hides scrollbar in Firefox */
+    -ms-overflow-style: none !important; /* Hides scrollbar in IE & Edge */
+}
+
+.no-scroll::-webkit-scrollbar {
+    display: none !important; /* Hides scrollbar in Chrome, Safari, and Edge */
+}
+
+/* Safe area padding for notched devices */
+.safe-area-padding {
+  padding-left: env(safe-area-inset-left, 0);
+  padding-right: env(safe-area-inset-right, 0);
+  padding-top: env(safe-area-inset-top, 0);
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+/* Global thin, themed scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #9B9393 #f0f0f0;
+}
+
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+*::-webkit-scrollbar-track {
+  background: #f0f0f0;
+  border-radius: 3px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: #9B9393;
+  border-radius: 3px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: #655858;
+}
+
+*::-webkit-scrollbar-corner {
+  background: #f0f0f0;
+}
