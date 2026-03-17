@@ -22,6 +22,11 @@ const nextConfig = {
           hostname: 'tblawncare.store',
           pathname: '/**',
         },
+        {
+          protocol: 'https',
+          hostname: 'images.unsplash.com',
+          pathname: '/**',
+        },
       ],
       unoptimized: false,
     },

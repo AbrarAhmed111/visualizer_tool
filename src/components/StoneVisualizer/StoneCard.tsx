@@ -19,12 +19,13 @@ export default function StoneCard({ product, isSelected, onSelect }: StoneCardPr
           : 'border-stone-light/30 hover:border-stone-light/60 bg-white'
       }`}
     >
-      <div className="w-24 sm:w-28 flex-shrink-0 h-[88px] sm:h-[96px] bg-stone-light/10 relative overflow-hidden rounded-l-xl min-w-0">
+      <div className="w-[50%] sm:w-28 h-[88px] sm:h-full flex-shrink-0 min-w-0 rounded-l-xl bg-stone-light/10 relative overflow-hidden" style={{ contain: 'paint' }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={product.imageUrl}
           alt={product.name}
-          className="absolute inset-0 w-full h-full object-cover object-top"
+          className="absolute inset-0 w-full h-full object-cover"
+          style={{ maxWidth: '100%', maxHeight: '100%' }}
           onError={(e) => {
             (e.target as HTMLImageElement).src = `https://placehold.co/200x200/9B9393/655858?text=${encodeURIComponent(product.name.slice(0, 2))}`;
           }}

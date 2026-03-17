@@ -5,10 +5,11 @@ export interface StoneProduct {
   imageUrl: string;
 }
 
+// Watermark-free stone/gravel images
 const STONE_IMAGES = [
-  'https://www.shutterstock.com/image-photo/top-view-crushed-terracotta-brick-260nw-2735421347.jpg',
-  'https://tblawncare.store/cdn/shop/products/Untitleddesign_11.png?v=1680987614',
-  'https://www.shutterstock.com/shutterstock/videos/3552768047/thumb/12.jpg?ip=x480',
+  'https://images.unsplash.com/photo-1607490694033-27f5c5d6f8fa?w=400&h=400&fit=crop', // gravel
+  'https://images.unsplash.com/photo-1558642452-9d2a7deb7f62?w=400&h=400&fit=crop', // pebbles
+  'https://images.unsplash.com/photo-1518837695005-2083093ee35b?w=400&h=400&fit=crop', // stone
 ];
 
 export const STONE_PRODUCTS: StoneProduct[] = [
