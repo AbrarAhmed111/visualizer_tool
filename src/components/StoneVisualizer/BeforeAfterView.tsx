@@ -40,11 +40,11 @@ export default function BeforeAfterView({
         </div>
         <div
           ref={sliderContainerRef}
-          className="flex-1 relative overflow-hidden select-none flex items-center justify-center p-1 min-h-0"
+          className="flex-1 relative overflow-auto select-none flex items-center justify-center p-1 min-h-0"
           style={{ touchAction: 'none' }}
         >
           <div
-            className="relative w-full h-full max-w-full flex items-center justify-center rounded-lg isolate overflow-hidden"
+            className="relative w-full max-w-full flex items-center justify-center rounded-lg isolate"
             style={{
               aspectRatio: imageDimensions
                 ? `${imageDimensions.width}/${imageDimensions.height}`

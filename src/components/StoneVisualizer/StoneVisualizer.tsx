@@ -8,8 +8,10 @@ import { MIN_IMAGE_WIDTH, RECOMMENDED_IMAGE_WIDTH } from '@/constants/visualizer
 import { drawBrushOverlay } from '@/utils/canvasUtils';
 import { getSvgPathFromStroke } from '@/utils/strokeUtils';
 import { saveProgress, loadProgress, clearProgress } from '@/utils/visualizerStorage';
+import { useIsMobile } from '@/hooks/useIsMobile';
 import BrushToolbar from './BrushToolbar';
 import BrushCanvas from './BrushCanvas';
+import BrushCanvasMobile from './BrushCanvasMobile';
 import BeforeAfterView from './BeforeAfterView';
 import VisualizerSidebar from './VisualizerSidebar';
 
@@ -38,6 +40,8 @@ export default function StoneVisualizer() {
   const [selectedStone, setSelectedStone] = useState<StoneProduct | null>(null);
   const [isDraggingSlider, setIsDraggingSlider] = useState(false);
   const [windowSize, setWindowSize] = useState({ w: 0, h: 0 });
+
+  const isMobile = useIsMobile();
 
   const saveCurrentProgress = useCallback(() => {
     const base64 = imageBase64Ref.current;
@@ -119,11 +123,14 @@ export default function StoneVisualizer() {
     const canvas = canvasRef.current;
     if (!canvas || !containerRef.current) return null;
     const rect = canvas.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) return null;
     const scaleX = canvas.width / rect.width;
     const scaleY = canvas.height / rect.height;
+    const x = Math.floor((clientX - rect.left) * scaleX);
+    const y = Math.floor((clientY - rect.top) * scaleY);
     return {
-      x: Math.floor((clientX - rect.left) * scaleX),
-      y: Math.floor((clientY - rect.top) * scaleY),
+      x: Math.max(0, Math.min(canvas.width - 1, x)),
+      y: Math.max(0, Math.min(canvas.height - 1, y)),
     };
   }, []);
 
@@ -162,8 +169,8 @@ export default function StoneVisualizer() {
         const stroke = getStroke(points, {
           size: brushSize,
           thinning: 0,
-          smoothing: 0.6,
-          streamline: 0.65,
+          smoothing: isMobile ? 0.75 : 0.6,
+          streamline: isMobile ? 0.8 : 0.65,
           simulatePressure: true,
           last: false,
         });
@@ -175,7 +182,7 @@ export default function StoneVisualizer() {
       }
       redrawBrushView();
     },
-    [brushSize, isEraseMode, imageDimensions, redrawBrushView]
+    [brushSize, isEraseMode, imageDimensions, redrawBrushView, isMobile]
   );
 
   const scheduleStrokeDraw = useCallback(() => {
@@ -186,6 +193,60 @@ export default function StoneVisualizer() {
     });
   }, [drawStrokeToMask]);
 
+  /** Shared drawing logic for both pointer (desktop) and touch (mobile) input */
+  const handleDrawStart = useCallback(
+    (clientX: number, clientY: number, pressure = 0.5) => {
+      if (!image || visualizationComplete) return;
+      const point = getCanvasPoint(clientX, clientY);
+      if (point) {
+        setIsDrawing(true);
+        const maskCanvas = maskCanvasRef.current;
+        if (maskCanvas) {
+          const ctx = maskCanvas.getContext('2d');
+          if (ctx) {
+            maskSnapshotRef.current = ctx.getImageData(0, 0, maskCanvas.width, maskCanvas.height);
+          }
+        }
+        strokePointsRef.current = [[point.x, point.y, pressure]];
+        drawStrokeToMask(strokePointsRef.current);
+      }
+    },
+    [image, visualizationComplete, getCanvasPoint, drawStrokeToMask]
+  );
+
+  const handleDrawMove = useCallback(
+    (clientX: number, clientY: number, pressure = 0.5) => {
+      if (!isDrawing) return;
+      const point = getCanvasPoint(clientX, clientY);
+      if (point) {
+        strokePointsRef.current.push([point.x, point.y, pressure]);
+        scheduleStrokeDraw();
+      }
+    },
+    [isDrawing, getCanvasPoint, scheduleStrokeDraw]
+  );
+
+  const handleDrawEnd = useCallback(() => {
+    if (rafRef.current) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    }
+    setIsDrawing(false);
+    maskSnapshotRef.current = null;
+    strokePointsRef.current = [];
+    setTimeout(() => saveCurrentProgress(), 0);
+  }, [saveCurrentProgress]);
+
+  const handleDrawCancel = useCallback(() => {
+    if (rafRef.current) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    }
+    setIsDrawing(false);
+    maskSnapshotRef.current = null;
+    strokePointsRef.current = [];
+  }, []);
+
   const buildResultImage = useCallback(() => {
     const resultCanvas = resultCanvasRef.current;
     const maskCanvas = maskCanvasRef.current;
@@ -195,37 +256,18 @@ export default function StoneVisualizer() {
 
   const handlePointerDown = useCallback(
     (e: React.PointerEvent) => {
-      if (!image || visualizationComplete) return;
       e.preventDefault();
-      const point = getCanvasPoint(e.clientX, e.clientY);
-      if (point) {
-        (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
-        setIsDrawing(true);
-        const maskCanvas = maskCanvasRef.current;
-        if (maskCanvas) {
-          const ctx = maskCanvas.getContext('2d');
-          if (ctx) {
-            maskSnapshotRef.current = ctx.getImageData(0, 0, maskCanvas.width, maskCanvas.height);
-          }
-        }
-        strokePointsRef.current = [[point.x, point.y, e.pressure || 0.5]];
-        drawStrokeToMask(strokePointsRef.current);
-      }
+      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+      handleDrawStart(e.clientX, e.clientY, e.pressure || 0.5);
     },
-    [image, visualizationComplete, getCanvasPoint, drawStrokeToMask]
+    [handleDrawStart]
   );
 
   const handlePointerMove = useCallback(
     (e: React.PointerEvent) => {
-      if (isDrawing) {
-        const point = getCanvasPoint(e.clientX, e.clientY);
-        if (point) {
-          strokePointsRef.current.push([point.x, point.y, e.pressure || 0.5]);
-          scheduleStrokeDraw();
-        }
-      }
+      handleDrawMove(e.clientX, e.clientY, e.pressure || 0.5);
     },
-    [isDrawing, getCanvasPoint, scheduleStrokeDraw]
+    [handleDrawMove]
   );
 
   const handlePointerUp = useCallback((e: React.PointerEvent) => {
@@ -234,16 +276,8 @@ export default function StoneVisualizer() {
     } catch {
       // Ignore if capture was already released
     }
-    if (rafRef.current) {
-      cancelAnimationFrame(rafRef.current);
-      rafRef.current = null;
-    }
-    setIsDrawing(false);
-    maskSnapshotRef.current = null;
-    strokePointsRef.current = [];
-    // Save progress after stroke completes (defer so mask is painted)
-    setTimeout(() => saveCurrentProgress(), 0);
-  }, [saveCurrentProgress]);
+    handleDrawEnd();
+  }, [handleDrawEnd]);
 
   const handlePointerLeave = useCallback((e: React.PointerEvent) => {
     try {
@@ -251,14 +285,8 @@ export default function StoneVisualizer() {
     } catch {
       // Ignore if no capture
     }
-    if (rafRef.current) {
-      cancelAnimationFrame(rafRef.current);
-      rafRef.current = null;
-    }
-    setIsDrawing(false);
-    maskSnapshotRef.current = null;
-    strokePointsRef.current = [];
-  }, []);
+    handleDrawCancel();
+  }, [handleDrawCancel]);
 
   const handlePointerCancel = useCallback((e: React.PointerEvent) => {
     try {
@@ -266,14 +294,8 @@ export default function StoneVisualizer() {
     } catch {
       // Ignore
     }
-    if (rafRef.current) {
-      cancelAnimationFrame(rafRef.current);
-      rafRef.current = null;
-    }
-    setIsDrawing(false);
-    maskSnapshotRef.current = null;
-    strokePointsRef.current = [];
-  }, []);
+    handleDrawCancel();
+  }, [handleDrawCancel]);
 
   const handleGenerateVisualization = useCallback(() => {
     clearProgress();
@@ -454,15 +476,27 @@ export default function StoneVisualizer() {
                 onBrushSizeChange={setBrushSize}
                 onEraseModeChange={setIsEraseMode}
               />
-              <BrushCanvas
-                canvasRef={canvasRef}
-                maskCanvasRef={maskCanvasRef}
-                onPointerDown={handlePointerDown}
-                onPointerMove={handlePointerMove}
-                onPointerUp={handlePointerUp}
-                onPointerLeave={handlePointerLeave}
-                onPointerCancel={handlePointerCancel}
-              />
+              {isMobile ? (
+                <BrushCanvasMobile
+                  canvasRef={canvasRef}
+                  maskCanvasRef={maskCanvasRef}
+                  onDrawStart={handleDrawStart}
+                  onDrawMove={handleDrawMove}
+                  onDrawEnd={handleDrawEnd}
+                  onDrawCancel={handleDrawCancel}
+                  isDrawingAllowed={!!image && !visualizationComplete}
+                />
+              ) : (
+                <BrushCanvas
+                  canvasRef={canvasRef}
+                  maskCanvasRef={maskCanvasRef}
+                  onPointerDown={handlePointerDown}
+                  onPointerMove={handlePointerMove}
+                  onPointerUp={handlePointerUp}
+                  onPointerLeave={handlePointerLeave}
+                  onPointerCancel={handlePointerCancel}
+                />
+              )}
             </div>
           </div>
         )}
