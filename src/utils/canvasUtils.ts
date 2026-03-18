@@ -39,8 +39,16 @@ export function drawBrushOverlay(
   const tempCtx = tempCanvas.getContext('2d');
   if (!tempCtx) return;
 
-  // Create tiled pattern from stone texture - scales proportionally, tiles seamlessly
-  const pattern = tempCtx.createPattern(textureImage, 'repeat');
+  // Scale texture to smaller repeat size so stones appear realistic (not oversized)
+  const patternSize = 120;
+  const patternCanvas = document.createElement('canvas');
+  patternCanvas.width = patternSize;
+  patternCanvas.height = patternSize;
+  const patternCtx = patternCanvas.getContext('2d');
+  if (!patternCtx) return;
+  patternCtx.drawImage(textureImage, 0, 0, patternSize, patternSize);
+
+  const pattern = tempCtx.createPattern(patternCanvas, 'repeat');
   if (!pattern) return;
 
   tempCtx.fillStyle = pattern;
