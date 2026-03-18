@@ -17,16 +17,6 @@ const nextConfig = {
           hostname: 'www.shutterstock.com',
           pathname: '/**',
         },
-        {
-          protocol: 'https',
-          hostname: 'tblawncare.store',
-          pathname: '/**',
-        },
-        {
-          protocol: 'https',
-          hostname: 'images.unsplash.com',
-          pathname: '/**',
-        },
       ],
       unoptimized: false,
     },

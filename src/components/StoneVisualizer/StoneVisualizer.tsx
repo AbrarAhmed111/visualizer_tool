@@ -1,17 +1,11 @@
 'use client';
 
 import { useRef, useState, useCallback, useEffect } from 'react';
-import { getStroke } from 'perfect-freehand';
 import type { StoneProduct } from '@/constants/stoneProducts';
-import { STONE_PRODUCTS } from '@/constants/stoneProducts';
 import { MIN_IMAGE_WIDTH, RECOMMENDED_IMAGE_WIDTH } from '@/constants/visualizer';
 import { drawBrushOverlay } from '@/utils/canvasUtils';
-import { getSvgPathFromStroke } from '@/utils/strokeUtils';
-import { saveProgress, loadProgress, clearProgress } from '@/utils/visualizerStorage';
-import { useIsMobile } from '@/hooks/useIsMobile';
 import BrushToolbar from './BrushToolbar';
 import BrushCanvas from './BrushCanvas';
-import BrushCanvasMobile from './BrushCanvasMobile';
 import BeforeAfterView from './BeforeAfterView';
 import VisualizerSidebar from './VisualizerSidebar';
 
@@ -22,11 +16,7 @@ export default function StoneVisualizer() {
   const beforeCanvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const sliderContainerRef = useRef<HTMLDivElement>(null);
-  const strokePointsRef = useRef<number[][]>([]);
-  const maskSnapshotRef = useRef<ImageData | null>(null);
-  const rafRef = useRef<number | null>(null);
-  const pendingMaskRestoreRef = useRef<{ base64: string; w: number; h: number } | null>(null);
-  const imageBase64Ref = useRef<string | null>(null);
+  const lastPointRef = useRef<{ x: number; y: number } | null>(null);
 
   const [image, setImage] = useState<HTMLImageElement | null>(null);
   const [imageDimensions, setImageDimensions] = useState<{ width: number; height: number } | null>(null);
@@ -39,52 +29,7 @@ export default function StoneVisualizer() {
   const [sliderPosition, setSliderPosition] = useState(50);
   const [selectedStone, setSelectedStone] = useState<StoneProduct | null>(null);
   const [isDraggingSlider, setIsDraggingSlider] = useState(false);
-  const [windowSize, setWindowSize] = useState({ w: 0, h: 0 });
-
-  const isMobile = useIsMobile();
-
-  const saveCurrentProgress = useCallback(() => {
-    const base64 = imageBase64Ref.current;
-    const maskCanvas = maskCanvasRef.current;
-    const dims = imageDimensions;
-    if (!base64 || !dims) return;
-
-    const maskBase64 = maskCanvas?.toDataURL('image/png');
-    const maskDims = maskCanvas && maskCanvas.width > 0 ? { width: maskCanvas.width, height: maskCanvas.height } : undefined;
-
-    saveProgress({
-      imageBase64: base64,
-      imageDimensions: dims,
-      maskBase64: maskBase64 || undefined,
-      maskDimensions: maskDims,
-      selectedStoneId: selectedStone?.id,
-      brushSize,
-      isEraseMode,
-      sliderPosition,
-    });
-  }, [imageDimensions, selectedStone?.id, brushSize, isEraseMode, sliderPosition]);
-
-  const loadImageFromDataUrl = useCallback((dataUrl: string) => {
-    imageBase64Ref.current = dataUrl;
-    const img = new Image();
-    img.onload = () => {
-      if (img.width < MIN_IMAGE_WIDTH) {
-        setError(`Image must be at least ${MIN_IMAGE_WIDTH}px wide. Your image is ${img.width}px.`);
-        setImageWarning(null);
-        return;
-      }
-      setError(null);
-      if (img.width < RECOMMENDED_IMAGE_WIDTH) {
-        setImageWarning(`Recommended: Use images ${RECOMMENDED_IMAGE_WIDTH}px+ wide for best results.`);
-      } else {
-        setImageWarning(null);
-      }
-      setImage(img);
-      setImageDimensions({ width: img.width, height: img.height });
-    };
-    img.onerror = () => setError('Failed to load image.');
-    img.src = dataUrl;
-  }, []);
+  const [hasMask, setHasMask] = useState(false);
 
   const loadImage = useCallback((file: File) => {
     const isImage = file.type.startsWith('image/') ||
@@ -97,13 +42,31 @@ export default function StoneVisualizer() {
     setImageWarning(null);
     setVisualizationComplete(false);
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      loadImageFromDataUrl(reader.result as string);
+    const objectUrl = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      if (img.width < MIN_IMAGE_WIDTH) {
+        URL.revokeObjectURL(objectUrl);
+        setError(`Image must be at least ${MIN_IMAGE_WIDTH}px wide. Your image is ${img.width}px.`);
+        setImageWarning(null);
+        return;
+      }
+      setError(null);
+      if (img.width < RECOMMENDED_IMAGE_WIDTH) {
+        setImageWarning(`Recommended: Use images ${RECOMMENDED_IMAGE_WIDTH}px+ wide for best results.`);
+      } else {
+        setImageWarning(null);
+      }
+      setImage(img);
+      setImageDimensions({ width: img.width, height: img.height });
+      setHasMask(false);
     };
-    reader.onerror = () => setError('Failed to read file.');
-    reader.readAsDataURL(file);
-  }, [loadImageFromDataUrl]);
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      setError('Failed to load image. Please try a different file.');
+    };
+    img.src = objectUrl;
+  }, []);
 
   const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -123,14 +86,11 @@ export default function StoneVisualizer() {
     const canvas = canvasRef.current;
     if (!canvas || !containerRef.current) return null;
     const rect = canvas.getBoundingClientRect();
-    if (rect.width <= 0 || rect.height <= 0) return null;
     const scaleX = canvas.width / rect.width;
     const scaleY = canvas.height / rect.height;
-    const x = Math.floor((clientX - rect.left) * scaleX);
-    const y = Math.floor((clientY - rect.top) * scaleY);
     return {
-      x: Math.max(0, Math.min(canvas.width - 1, x)),
-      y: Math.max(0, Math.min(canvas.height - 1, y)),
+      x: Math.floor((clientX - rect.left) * scaleX),
+      y: Math.floor((clientY - rect.top) * scaleY),
     };
   }, []);
 
@@ -141,111 +101,42 @@ export default function StoneVisualizer() {
     drawBrushOverlay(canvas, maskCanvas, image);
   }, [image]);
 
-  const drawStrokeToMask = useCallback(
-    (points: number[][]) => {
+  const drawBrushStroke = useCallback(
+    (x: number, y: number) => {
       const maskCanvas = maskCanvasRef.current;
       const canvas = canvasRef.current;
-      if (!maskCanvas || !canvas || !imageDimensions || points.length === 0) return;
+      if (!maskCanvas || !canvas || !imageDimensions) return;
 
       const ctx = maskCanvas.getContext('2d');
       if (!ctx) return;
 
-      // Restore mask from snapshot (start of stroke)
-      const snapshot = maskSnapshotRef.current;
-      if (snapshot) {
-        ctx.putImageData(snapshot, 0, 0);
-      }
-
+      const radius = brushSize / 2;
       ctx.globalCompositeOperation = isEraseMode ? 'destination-out' : 'source-over';
       ctx.fillStyle = isEraseMode ? 'rgba(0,0,0,1)' : 'rgba(255,255,255,1)';
 
-      if (points.length === 1) {
-        const [x, y] = points[0];
-        const r = brushSize / 2;
-        ctx.beginPath();
-        ctx.arc(x, y, r, 0, Math.PI * 2);
-        ctx.fill();
-      } else {
-        const stroke = getStroke(points, {
-          size: brushSize,
-          thinning: 0,
-          smoothing: isMobile ? 0.75 : 0.6,
-          streamline: isMobile ? 0.8 : 0.65,
-          simulatePressure: true,
-          last: false,
-        });
-        if (stroke.length >= 4) {
-          const pathData = getSvgPathFromStroke(stroke);
-          const path = new Path2D(pathData);
-          ctx.fill(path);
+      const last = lastPointRef.current;
+      if (last) {
+        const dist = Math.hypot(x - last.x, y - last.y);
+        const steps = Math.max(1, Math.ceil(dist / (radius * 0.5)));
+        for (let i = 1; i <= steps; i++) {
+          const t = i / steps;
+          const px = last.x + (x - last.x) * t;
+          const py = last.y + (y - last.y) * t;
+          ctx.beginPath();
+          ctx.arc(px, py, radius, 0, Math.PI * 2);
+          ctx.fill();
         }
+      } else {
+        ctx.beginPath();
+        ctx.arc(x, y, radius, 0, Math.PI * 2);
+        ctx.fill();
       }
+      lastPointRef.current = { x, y };
+      setHasMask(true);
       redrawBrushView();
     },
-    [brushSize, isEraseMode, imageDimensions, redrawBrushView, isMobile]
+    [brushSize, isEraseMode, imageDimensions, redrawBrushView]
   );
-
-  const scheduleStrokeDraw = useCallback(() => {
-    if (rafRef.current) return;
-    rafRef.current = requestAnimationFrame(() => {
-      rafRef.current = null;
-      drawStrokeToMask(strokePointsRef.current);
-    });
-  }, [drawStrokeToMask]);
-
-  /** Shared drawing logic for both pointer (desktop) and touch (mobile) input */
-  const handleDrawStart = useCallback(
-    (clientX: number, clientY: number, pressure = 0.5) => {
-      if (!image || visualizationComplete) return;
-      const point = getCanvasPoint(clientX, clientY);
-      if (point) {
-        setIsDrawing(true);
-        const maskCanvas = maskCanvasRef.current;
-        if (maskCanvas) {
-          const ctx = maskCanvas.getContext('2d');
-          if (ctx) {
-            maskSnapshotRef.current = ctx.getImageData(0, 0, maskCanvas.width, maskCanvas.height);
-          }
-        }
-        strokePointsRef.current = [[point.x, point.y, pressure]];
-        drawStrokeToMask(strokePointsRef.current);
-      }
-    },
-    [image, visualizationComplete, getCanvasPoint, drawStrokeToMask]
-  );
-
-  const handleDrawMove = useCallback(
-    (clientX: number, clientY: number, pressure = 0.5) => {
-      if (!isDrawing) return;
-      const point = getCanvasPoint(clientX, clientY);
-      if (point) {
-        strokePointsRef.current.push([point.x, point.y, pressure]);
-        scheduleStrokeDraw();
-      }
-    },
-    [isDrawing, getCanvasPoint, scheduleStrokeDraw]
-  );
-
-  const handleDrawEnd = useCallback(() => {
-    if (rafRef.current) {
-      cancelAnimationFrame(rafRef.current);
-      rafRef.current = null;
-    }
-    setIsDrawing(false);
-    maskSnapshotRef.current = null;
-    strokePointsRef.current = [];
-    setTimeout(() => saveCurrentProgress(), 0);
-  }, [saveCurrentProgress]);
-
-  const handleDrawCancel = useCallback(() => {
-    if (rafRef.current) {
-      cancelAnimationFrame(rafRef.current);
-      rafRef.current = null;
-    }
-    setIsDrawing(false);
-    maskSnapshotRef.current = null;
-    strokePointsRef.current = [];
-  }, []);
 
   const buildResultImage = useCallback(() => {
     const resultCanvas = resultCanvasRef.current;
@@ -256,55 +147,42 @@ export default function StoneVisualizer() {
 
   const handlePointerDown = useCallback(
     (e: React.PointerEvent) => {
-      e.preventDefault();
-      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
-      handleDrawStart(e.clientX, e.clientY, e.pressure || 0.5);
+      if (!image || visualizationComplete) return;
+      const point = getCanvasPoint(e.clientX, e.clientY);
+      if (point) {
+        setIsDrawing(true);
+        drawBrushStroke(point.x, point.y);
+      }
     },
-    [handleDrawStart]
+    [image, visualizationComplete, getCanvasPoint, drawBrushStroke]
   );
 
   const handlePointerMove = useCallback(
     (e: React.PointerEvent) => {
-      handleDrawMove(e.clientX, e.clientY, e.pressure || 0.5);
+      if (isDrawing) {
+        const point = getCanvasPoint(e.clientX, e.clientY);
+        if (point) drawBrushStroke(point.x, point.y);
+      }
     },
-    [handleDrawMove]
+    [isDrawing, getCanvasPoint, drawBrushStroke]
   );
 
-  const handlePointerUp = useCallback((e: React.PointerEvent) => {
-    try {
-      (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
-    } catch {
-      // Ignore if capture was already released
-    }
-    handleDrawEnd();
-  }, [handleDrawEnd]);
+  const handlePointerUp = useCallback(() => {
+    setIsDrawing(false);
+    lastPointRef.current = null;
+  }, []);
 
-  const handlePointerLeave = useCallback((e: React.PointerEvent) => {
-    try {
-      (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
-    } catch {
-      // Ignore if no capture
-    }
-    handleDrawCancel();
-  }, [handleDrawCancel]);
-
-  const handlePointerCancel = useCallback((e: React.PointerEvent) => {
-    try {
-      (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
-    } catch {
-      // Ignore
-    }
-    handleDrawCancel();
-  }, [handleDrawCancel]);
+  const handlePointerLeave = useCallback(() => {
+    setIsDrawing(false);
+    lastPointRef.current = null;
+  }, []);
 
   const handleGenerateVisualization = useCallback(() => {
-    clearProgress();
     setVisualizationComplete(true);
   }, []);
 
   const handleSliderPointerDown = useCallback((e: React.PointerEvent) => {
     e.preventDefault();
-    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
     setIsDraggingSlider(true);
   }, []);
 
@@ -313,8 +191,23 @@ export default function StoneVisualizer() {
   }, []);
 
   const handleChangeImage = useCallback(() => {
-    clearProgress();
-    imageBase64Ref.current = null;
+    setImage(null);
+    setImageDimensions(null);
+    setVisualizationComplete(false);
+    setImageWarning(null);
+    setHasMask(false);
+  }, []);
+
+  const handleDownload = useCallback(() => {
+    const canvas = resultCanvasRef.current;
+    if (!canvas) return;
+    const link = document.createElement('a');
+    link.download = 'stone-visualization.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  }, []);
+
+  const handleRestart = useCallback(() => {
     setImage(null);
     setImageDimensions(null);
     setVisualizationComplete(false);
@@ -342,35 +235,6 @@ export default function StoneVisualizer() {
   }, [isDraggingSlider]);
 
   useEffect(() => {
-    const handleResize = () => setWindowSize({ w: window.innerWidth, h: window.innerHeight });
-    handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  useEffect(() => {
-    const stored = loadProgress();
-    if (!stored?.imageBase64) return;
-
-    if (stored.selectedStoneId) {
-      const stone = STONE_PRODUCTS.find((p) => p.id === stored.selectedStoneId);
-      if (stone) setSelectedStone(stone);
-    }
-    setBrushSize(stored.brushSize ?? 30);
-    setIsEraseMode(stored.isEraseMode ?? false);
-    setSliderPosition(stored.sliderPosition ?? 50);
-
-    if (stored.maskBase64 && stored.maskDimensions) {
-      pendingMaskRestoreRef.current = {
-        base64: stored.maskBase64,
-        w: stored.maskDimensions.width,
-        h: stored.maskDimensions.height,
-      };
-    }
-    loadImageFromDataUrl(stored.imageBase64);
-  }, [loadImageFromDataUrl]);
-
-  useEffect(() => {
     if (!image || !imageDimensions) return;
 
     const canvas = canvasRef.current;
@@ -378,12 +242,9 @@ export default function StoneVisualizer() {
     const resultCanvas = resultCanvasRef.current;
     if (!canvas || !maskCanvas) return;
 
-    const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 1024;
-    const sidebarWidth = isDesktop ? 384 : 0;
-    const padding = typeof window !== 'undefined' && window.innerWidth < 640 ? 16 : 32;
-    const maxWidth = typeof window !== 'undefined' ? Math.min(1200, window.innerWidth - sidebarWidth - padding) : 1200;
-    const toolbarHeight = typeof window !== 'undefined' && window.innerWidth < 640 ? 64 : 52;
-    const maxHeight = typeof window !== 'undefined' ? window.innerHeight - toolbarHeight - 32 : 800;
+    const sidebarWidth = typeof window !== 'undefined' && window.innerWidth >= 1024 ? 480 : 0;
+    const maxWidth = typeof window !== 'undefined' ? window.innerWidth - sidebarWidth - 32 : 1200;
+    const maxHeight = typeof window !== 'undefined' ? Math.floor(window.innerHeight * 0.8) : 800;
 
     let w = imageDimensions.width;
     let h = imageDimensions.height;
@@ -413,26 +274,14 @@ export default function StoneVisualizer() {
     }
 
     const maskCtx = maskCanvas.getContext('2d');
-    if (maskCtx) {
-      maskCtx.clearRect(0, 0, w, h);
-      const pending = pendingMaskRestoreRef.current;
-      if (pending && pending.w === w && pending.h === h) {
-        pendingMaskRestoreRef.current = null;
-        const maskImg = new Image();
-        maskImg.onload = () => {
-          maskCtx.drawImage(maskImg, 0, 0);
-          redrawBrushView();
-        };
-        maskImg.src = pending.base64;
-      }
-    }
+    if (maskCtx) maskCtx.clearRect(0, 0, w, h);
 
     const ctx = canvas.getContext('2d');
     if (ctx) {
       ctx.clearRect(0, 0, w, h);
       ctx.drawImage(image, 0, 0, w, h);
     }
-  }, [image, imageDimensions, windowSize, redrawBrushView]);
+  }, [image, imageDimensions]);
 
   useEffect(() => {
     if (visualizationComplete) {
@@ -440,15 +289,25 @@ export default function StoneVisualizer() {
     }
   }, [visualizationComplete, buildResultImage]);
 
-  useEffect(() => {
-    if (!image || !imageDimensions || !imageBase64Ref.current || visualizationComplete) return;
-    const id = setTimeout(saveCurrentProgress, 300);
-    return () => clearTimeout(id);
-  }, [image, imageDimensions, selectedStone, brushSize, isEraseMode, sliderPosition, visualizationComplete, saveCurrentProgress]);
-
   return (
-    <div ref={containerRef} className="h-dvh min-h-screen overflow-hidden bg-stone-bg flex flex-col lg:flex-row safe-area-padding">
-      <div className="flex-1 flex flex-col min-w-0 p-2 sm:p-3 lg:p-4 min-h-0 overflow-hidden">
+    <div ref={containerRef} className="h-screen overflow-hidden bg-stone-bg flex flex-col lg:flex-row">
+      <VisualizerSidebar
+        onFileChange={handleFileChange}
+        onDrop={handleDrop}
+        onDragOver={handleDragOver}
+        onGenerateVisualization={handleGenerateVisualization}
+        onChangeImage={handleChangeImage}
+        onDownload={handleDownload}
+        onRestart={handleRestart}
+        onSelectStone={setSelectedStone}
+        selectedStone={selectedStone}
+        hasImage={!!image}
+        hasMask={hasMask}
+        visualizationComplete={visualizationComplete}
+        error={error}
+        imageWarning={imageWarning}
+      />
+      <div className="flex-1 flex flex-col min-w-0 p-2 min-h-0 overflow-hidden">
         {!image ? (
           <div className="flex-1 flex items-center justify-center">
             <p className="text-stone-heading/60 text-sm">
@@ -476,45 +335,18 @@ export default function StoneVisualizer() {
                 onBrushSizeChange={setBrushSize}
                 onEraseModeChange={setIsEraseMode}
               />
-              {isMobile ? (
-                <BrushCanvasMobile
-                  canvasRef={canvasRef}
-                  maskCanvasRef={maskCanvasRef}
-                  onDrawStart={handleDrawStart}
-                  onDrawMove={handleDrawMove}
-                  onDrawEnd={handleDrawEnd}
-                  onDrawCancel={handleDrawCancel}
-                  isDrawingAllowed={!!image && !visualizationComplete}
-                />
-              ) : (
-                <BrushCanvas
-                  canvasRef={canvasRef}
-                  maskCanvasRef={maskCanvasRef}
-                  onPointerDown={handlePointerDown}
-                  onPointerMove={handlePointerMove}
-                  onPointerUp={handlePointerUp}
-                  onPointerLeave={handlePointerLeave}
-                  onPointerCancel={handlePointerCancel}
-                />
-              )}
+              <BrushCanvas
+                canvasRef={canvasRef}
+                maskCanvasRef={maskCanvasRef}
+                onPointerDown={handlePointerDown}
+                onPointerMove={handlePointerMove}
+                onPointerUp={handlePointerUp}
+                onPointerLeave={handlePointerLeave}
+              />
             </div>
           </div>
         )}
       </div>
-
-      <VisualizerSidebar
-        onFileChange={handleFileChange}
-        onDrop={handleDrop}
-        onDragOver={handleDragOver}
-        onGenerateVisualization={handleGenerateVisualization}
-        onChangeImage={handleChangeImage}
-        onSelectStone={setSelectedStone}
-        selectedStone={selectedStone}
-        hasImage={!!image}
-        visualizationComplete={visualizationComplete}
-        error={error}
-        imageWarning={imageWarning}
-      />
     </div>
   );
 }

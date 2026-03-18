@@ -1,5 +1,7 @@
 'use client';
 
+import Image from 'next/image';
+import { Download } from 'lucide-react';
 import type { StoneProduct } from '@/constants/stoneProducts';
 import UploadSection from './UploadSection';
 import StoneSelection from './StoneSelection';
@@ -10,9 +12,12 @@ interface VisualizerSidebarProps {
   onDragOver: (e: React.DragEvent) => void;
   onGenerateVisualization: () => void;
   onChangeImage: () => void;
+  onDownload: () => void;
+  onRestart: () => void;
   onSelectStone: (stone: StoneProduct) => void;
   selectedStone: StoneProduct | null;
   hasImage: boolean;
+  hasMask: boolean;
   visualizationComplete: boolean;
   error: string | null;
   imageWarning: string | null;
@@ -24,56 +29,92 @@ export default function VisualizerSidebar({
   onDragOver,
   onGenerateVisualization,
   onChangeImage,
+  onDownload,
+  onRestart,
   onSelectStone,
   selectedStone,
   hasImage,
+  hasMask,
   visualizationComplete,
   error,
   imageWarning,
 }: VisualizerSidebarProps) {
+  if (visualizationComplete) {
+    return (
+      <aside className="w-full lg:w-[420px] xl:w-[480px] flex-shrink-0 border-t lg:border-t-0 lg:border-r border-stone-light/30 bg-white flex flex-col min-h-0 self-stretch">
+        <div className="scrollbar-thin items-center justify-center flex-1 min-h-0 overflow-y-auto p-6 flex flex-col gap-4">
+          <Image src="/logo.png" alt="Logo" width={120} height={40} className="h-48 w-auto object-contain " />
+          <h2 className="text-lg font-semibold text-stone-heading uppercase tracking-wide">
+            Your visualization
+          </h2>
+        </div>
+        <div className="flex-shrink-0 p-6 pt-4 border-t border-stone-light/30 bg-white flex flex-col gap-3">
+          <button
+            type="button"
+            onClick={onDownload}
+            className="w-full px-4 py-2.5 rounded-lg bg-stone-dark text-white hover:bg-stone-dark/90 transition-colors text-sm font-medium flex items-center justify-center gap-2"
+          >
+            <Download className="w-4 h-4" />
+            Download
+          </button>
+          <button
+            type="button"
+            onClick={onRestart}
+            className="w-full px-4 py-2.5 rounded-lg bg-stone-light/30 text-stone-heading hover:bg-stone-light/40 transition-colors text-sm font-medium"
+          >
+            Restart
+          </button>
+        </div>
+      </aside>
+    );
+  }
+
   return (
-    <aside className="w-full lg:w-80 xl:w-96 flex-shrink-0 border-t lg:border-t-0 lg:border-l border-stone-light/30 bg-white p-3 sm:p-4 lg:p-6 flex flex-col gap-3 sm:gap-4 lg:gap-6 overflow-y-auto overflow-x-hidden max-h-[50vh] sm:max-h-[55vh] lg:max-h-none min-h-[220px] sm:min-h-0">
-      <h2 className="text-base sm:text-lg font-semibold text-stone-heading uppercase tracking-wide flex-shrink-0">
-        Upload your space
-      </h2>
+    <aside className="w-full lg:w-[420px] xl:w-[480px] flex-shrink-0 border-t lg:border-t-0 lg:border-r border-stone-light/30 bg-white flex flex-col min-h-0 self-stretch">
+      <div className="scrollbar-thin flex-1 min-h-0 overflow-y-auto p-6 flex flex-col gap-6">
+        <Image src="/logo.png" alt="Logo" width={120} height={40} className="h-36 w-auto object-contain" />
+        <h2 className="text-lg font-semibold text-stone-heading uppercase tracking-wide">
+          Upload your space
+        </h2>
 
-      <UploadSection
-        onFileChange={onFileChange}
-        onDrop={onDrop}
-        onDragOver={onDragOver}
-      />
+        <UploadSection
+          onFileChange={onFileChange}
+          onDrop={onDrop}
+          onDragOver={onDragOver}
+        />
 
-      {hasImage && (
-        <StoneSelection selectedStone={selectedStone} onSelectStone={onSelectStone} />
-      )}
+        <StoneSelection selectedStone={selectedStone} onSelectStone={onSelectStone} disabled={!hasImage} />
 
-      {hasImage && !visualizationComplete && (
-        <button
-          type="button"
-          onClick={onGenerateVisualization}
-          disabled={!selectedStone}
-          className="w-full min-h-[44px] px-4 py-3 sm:py-2.5 rounded-lg bg-stone-dark text-white hover:bg-stone-dark/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium touch-manipulation"
-        >
-          Generate Visualization
-        </button>
-      )}
+        {error && (
+          <p className="text-red-500 text-sm">{error}</p>
+        )}
+
+        {imageWarning && (
+          <p className="text-amber-600 text-sm">{imageWarning}</p>
+        )}
+      </div>
 
       {hasImage && (
-        <button
-          type="button"
-          onClick={onChangeImage}
-          className="w-full min-h-[44px] px-4 py-3 sm:py-2.5 rounded-lg bg-stone-light/30 text-stone-heading hover:bg-stone-light/40 transition-colors text-sm font-medium touch-manipulation"
-        >
-          Change image
-        </button>
-      )}
-
-      {error && (
-        <p className="text-red-500 text-sm">{error}</p>
-      )}
-
-      {imageWarning && (
-        <p className="text-amber-600 text-sm">{imageWarning}</p>
+        <div className="flex-shrink-0 p-6 pt-4 border-t border-stone-light/30 bg-white flex flex-col gap-3">
+          {!hasMask && (
+            <p className="text-amber-600 text-sm">Paint the area where you want the stone effect before generating</p>
+          )}
+          <button
+            type="button"
+            onClick={onGenerateVisualization}
+            disabled={!selectedStone || !hasMask}
+            className="w-full px-4 py-2.5 rounded-lg bg-stone-dark text-white hover:bg-stone-dark/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium"
+          >
+            Generate Visualization
+          </button>
+          <button
+            type="button"
+            onClick={onChangeImage}
+            className="w-full px-4 py-2.5 rounded-lg bg-stone-light/30 text-stone-heading hover:bg-stone-light/40 transition-colors text-sm font-medium"
+          >
+            Change image
+          </button>
+        </div>
       )}
     </aside>
   );
