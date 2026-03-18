@@ -1,5 +1,5 @@
 {
-  "name": "tapypay-dashboard",
+  "name": "chase-materials",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -13,14 +13,12 @@
     "@reduxjs/toolkit": "^2.11.2",
     "axios": "^1.7.8",
     "clsx": "^2.1.1",
-    "konva": "^10.2.3",
     "lucide-react": "^0.575.0",
     "next": "15.0.7",
     "react": "^18.0.0",
     "react-dom": "^18.0.0",
     "react-hot-toast": "^2.6.0",
     "react-icons": "^5.5.0",
-    "react-konva": "^19.2.3",
     "react-redux": "^9.2.0",
     "recharts": "^3.7.0",
     "use-intl": "^4.8.3"
