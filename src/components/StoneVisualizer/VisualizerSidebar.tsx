@@ -17,6 +17,7 @@ interface VisualizerSidebarProps {
   onSelectStone: (stone: StoneProduct) => void;
   selectedStone: StoneProduct | null;
   hasImage: boolean;
+  imagePreviewUrl?: string;
   hasMask: boolean;
   visualizationComplete: boolean;
   error: string | null;
@@ -34,6 +35,7 @@ export default function VisualizerSidebar({
   onSelectStone,
   selectedStone,
   hasImage,
+  imagePreviewUrl,
   hasMask,
   visualizationComplete,
   error,
@@ -41,14 +43,14 @@ export default function VisualizerSidebar({
 }: VisualizerSidebarProps) {
   if (visualizationComplete) {
     return (
-      <aside className="w-full lg:w-[420px] xl:w-[480px] flex-shrink-0 border-t lg:border-t-0 lg:border-r border-stone-light/30 bg-white flex flex-col min-h-0 self-stretch">
-        <div className="scrollbar-thin items-center justify-center flex-1 min-h-0 overflow-y-auto p-6 flex flex-col gap-4">
-          <Image src="/logo.png" alt="Logo" width={120} height={40} className="h-48 w-auto object-contain " />
+      <aside className="w-full lg:w-[420px] xl:w-[480px] flex-shrink-0 lg:flex-1 lg:min-h-0 border-t lg:border-t-0 lg:border-r border-stone-light/30 bg-white flex flex-col min-h-0 lg:overflow-hidden">
+        <div className="scrollbar-thin items-center justify-center flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-6 flex flex-col gap-4">
+          <Image src="/logo.png" alt="Logo" width={120} height={40} className="h-48 w-auto object-contain" />
           <h2 className="text-lg font-semibold text-stone-heading uppercase tracking-wide">
             Your visualization
           </h2>
         </div>
-        <div className="flex-shrink-0 p-6 pt-4 border-t border-stone-light/30 bg-white flex flex-col gap-3">
+        <div className="flex-shrink-0 p-4 max-lg:p-3 pt-3 border-t border-stone-light/30 bg-white flex flex-col gap-2">
           <button
             type="button"
             onClick={onDownload}
@@ -70,18 +72,19 @@ export default function VisualizerSidebar({
   }
 
   return (
-    <aside className="w-full lg:w-[420px] xl:w-[480px] flex-shrink-0 border-t lg:border-t-0 lg:border-r border-stone-light/30 bg-white flex flex-col min-h-0 self-stretch">
-      <div className="scrollbar-thin flex-1 min-h-0 overflow-y-auto p-6 flex flex-col gap-6">
+    <aside className="w-full lg:w-[420px] xl:w-[480px] flex-shrink-0 lg:flex-1 lg:min-h-0 border-t lg:border-t-0 lg:border-r border-stone-light/30 bg-white flex flex-col min-h-0 lg:overflow-hidden">
+      <div className="scrollbar-thin flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-6 max-lg:p-4 flex flex-col gap-4 max-lg:gap-4">
         <Image src="/logo.png" alt="Logo" width={120} height={40} className="h-36 w-auto object-contain" />
         <h2 className="text-lg font-semibold text-stone-heading uppercase tracking-wide">
           Upload your space
         </h2>
 
-        <UploadSection
-          onFileChange={onFileChange}
-          onDrop={onDrop}
-          onDragOver={onDragOver}
-        />
+<UploadSection
+        onFileChange={onFileChange}
+        onDrop={onDrop}
+        onDragOver={onDragOver}
+        imagePreviewUrl={imagePreviewUrl}
+      />
 
         <StoneSelection selectedStone={selectedStone} onSelectStone={onSelectStone} disabled={!hasImage} />
 
@@ -95,7 +98,7 @@ export default function VisualizerSidebar({
       </div>
 
       {hasImage && (
-        <div className="flex-shrink-0 p-6 pt-4 border-t border-stone-light/30 bg-white flex flex-col gap-3">
+        <div className="flex-shrink-0 p-4 max-lg:p-3 pt-3 border-t border-stone-light/30 bg-white flex flex-col gap-2">
           {!hasMask && (
             <p className="text-amber-600 text-sm">Paint the area where you want the stone effect before generating</p>
           )}

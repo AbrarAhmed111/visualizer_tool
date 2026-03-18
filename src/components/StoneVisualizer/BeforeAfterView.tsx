@@ -40,19 +40,18 @@ export default function BeforeAfterView({
         </div>
         <div
           ref={sliderContainerRef}
-          className="flex-1 relative overflow-hidden select-none flex items-center justify-center p-1 min-h-0"
-          style={{ touchAction: 'none' }}
+          className="flex-1 relative overflow-hidden select-none flex items-center justify-center p-1 max-lg:p-0.5 min-h-0"
+          style={{ touchAction: 'none', WebkitUserSelect: 'none', userSelect: 'none' }}
         >
-          <div
-            className="relative w-full h-full max-w-full flex items-center justify-center rounded-lg isolate overflow-hidden"
-            style={{
-              aspectRatio: imageDimensions
-                ? `${imageDimensions.width}/${imageDimensions.height}`
-                : '1',
-              minHeight: 0,
-              maxHeight: '80vh',
-            }}
-          >
+<div
+              className="relative w-full h-full max-w-full flex items-center justify-center rounded-lg isolate overflow-hidden max-h-[80vh] max-lg:max-h-[min(80vh,60dvh)]"
+              style={{
+                aspectRatio: imageDimensions
+                  ? `${imageDimensions.width}/${imageDimensions.height}`
+                  : '1',
+                minHeight: 0,
+              }}
+            >
             <canvas
               ref={beforeCanvasRef}
               className="absolute inset-0 w-full h-full block"

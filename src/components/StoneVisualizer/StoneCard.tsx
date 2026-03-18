@@ -23,7 +23,7 @@ export default function StoneCard({ product, isSelected, onSelect, disabled }: S
             : 'border-stone-light/40 hover:border-stone-light'
       }`}
     >
-      <div className="aspect-[4/3] w-full bg-stone-light/20 relative overflow-hidden">
+      <div className="aspect-[4/3] w-full max-lg:aspect-[3/2] bg-stone-light/20 relative overflow-hidden">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={product.imageUrl}
@@ -35,7 +35,7 @@ export default function StoneCard({ product, isSelected, onSelect, disabled }: S
         />
       </div>
       <div className="p-2 bg-white">
-        <p className="text-sm font-medium text-stone-heading truncate">{product.name}</p>
+        <p className="text-sm font-medium text-stone-heading line-clamp-2" title={product.name}>{product.name}</p>
         <p className="text-xs text-stone-heading/60">Seamless Texture</p>
       </div>
     </button>

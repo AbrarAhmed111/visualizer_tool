@@ -3,6 +3,13 @@ import { Toaster } from "react-hot-toast";
 import { ReactNode } from "react";
 import Providers from "@/store/Providers";
 
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  userScalable: true,
+};
+
 type RootLayoutProps = {
   children: ReactNode;
 };

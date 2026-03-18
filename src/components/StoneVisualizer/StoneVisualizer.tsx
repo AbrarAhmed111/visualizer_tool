@@ -177,6 +177,26 @@ export default function StoneVisualizer() {
     lastPointRef.current = null;
   }, []);
 
+  const handleBrushDown = useCallback(
+    (clientX: number, clientY: number) => {
+      if (!image || visualizationComplete) return;
+      const point = getCanvasPoint(clientX, clientY);
+      if (point) {
+        setIsDrawing(true);
+        drawBrushStroke(point.x, point.y);
+      }
+    },
+    [image, visualizationComplete, getCanvasPoint, drawBrushStroke]
+  );
+
+  const handleBrushMove = useCallback(
+    (clientX: number, clientY: number) => {
+      const point = getCanvasPoint(clientX, clientY);
+      if (point) drawBrushStroke(point.x, point.y);
+    },
+    [getCanvasPoint, drawBrushStroke]
+  );
+
   const handleGenerateVisualization = useCallback(() => {
     setVisualizationComplete(true);
   }, []);
@@ -290,7 +310,8 @@ export default function StoneVisualizer() {
   }, [visualizationComplete, buildResultImage]);
 
   return (
-    <div ref={containerRef} className="h-screen overflow-hidden bg-stone-bg flex flex-col lg:flex-row">
+    <div ref={containerRef} className="h-screen overflow-hidden max-lg:overflow-y-auto max-lg:min-h-[100dvh] bg-stone-bg flex flex-col lg:flex-row">
+      <div className="max-lg:order-2 flex-shrink-0 w-full lg:w-auto lg:h-full lg:flex lg:flex-col lg:min-h-0 lg:overflow-hidden">
       <VisualizerSidebar
         onFileChange={handleFileChange}
         onDrop={handleDrop}
@@ -302,12 +323,14 @@ export default function StoneVisualizer() {
         onSelectStone={setSelectedStone}
         selectedStone={selectedStone}
         hasImage={!!image}
+        imagePreviewUrl={image?.src}
         hasMask={hasMask}
         visualizationComplete={visualizationComplete}
         error={error}
         imageWarning={imageWarning}
       />
-      <div className="flex-1 flex flex-col min-w-0 p-2 min-h-0 overflow-hidden">
+      </div>
+      <div className="max-lg:order-1 flex-1 flex flex-col min-w-0 p-2 max-lg:p-1.5 min-h-0 overflow-hidden max-lg:min-h-[50vh]">
         {!image ? (
           <div className="flex-1 flex items-center justify-center">
             <p className="text-stone-heading/60 text-sm">
@@ -342,6 +365,9 @@ export default function StoneVisualizer() {
                 onPointerMove={handlePointerMove}
                 onPointerUp={handlePointerUp}
                 onPointerLeave={handlePointerLeave}
+                onBrushDown={handleBrushDown}
+                onBrushMove={handleBrushMove}
+                onBrushUp={handlePointerUp}
               />
             </div>
           </div>
