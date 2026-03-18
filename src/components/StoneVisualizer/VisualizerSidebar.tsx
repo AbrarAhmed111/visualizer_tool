@@ -21,6 +21,7 @@ interface VisualizerSidebarProps {
   hasMask: boolean;
   visualizationComplete: boolean;
   isGenerating?: boolean;
+  isTextureLoading?: boolean;
   error: string | null;
   imageWarning: string | null;
 }
@@ -40,6 +41,7 @@ export default function VisualizerSidebar({
   hasMask,
   visualizationComplete,
   isGenerating = false,
+  isTextureLoading = false,
   error,
   imageWarning,
 }: VisualizerSidebarProps) {
@@ -51,7 +53,7 @@ export default function VisualizerSidebar({
           <h2 className="text-lg font-semibold text-stone-heading uppercase tracking-wide">
             Your visualization
           </h2>
-          <StoneSelection selectedStone={selectedStone} onSelectStone={onSelectStone} disabled={false} />
+          <StoneSelection selectedStone={selectedStone} onSelectStone={onSelectStone} disabled={isTextureLoading} />
         </div>
         <div className="flex-shrink-0 p-4 max-lg:p-3 pt-3 border-t border-stone-light/30 bg-white flex flex-col gap-2">
           <button

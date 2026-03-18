@@ -35,6 +35,7 @@ export default function StoneVisualizer() {
   const [showScrollIndicator, setShowScrollIndicator] = useState(true);
   const hasScrolledDownRef = useRef(false);
   const [textureImage, setTextureImage] = useState<HTMLImageElement | null>(null);
+  const [isTextureLoading, setIsTextureLoading] = useState(false);
 
   const loadImage = useCallback((file: File) => {
     const isImage = file.type.startsWith('image/') ||
@@ -87,15 +88,23 @@ export default function StoneVisualizer() {
 
   const handleDragOver = useCallback((e: React.DragEvent) => e.preventDefault(), []);
 
-  // Load texture when stone is selected - enables instant material switching
+  // Load texture when stone is selected - enables material switching with loading state
   useEffect(() => {
     if (!selectedStone?.textureUrl) {
       setTextureImage(null);
+      setIsTextureLoading(false);
       return;
     }
+    setIsTextureLoading(true);
     const img = new Image();
-    img.onload = () => setTextureImage(img);
-    img.onerror = () => setTextureImage(null);
+    img.onload = () => {
+      setTextureImage(img);
+      setIsTextureLoading(false);
+    };
+    img.onerror = () => {
+      setTextureImage(null);
+      setIsTextureLoading(false);
+    };
     img.src = selectedStone.textureUrl;
   }, [selectedStone?.textureUrl]);
 
@@ -382,6 +391,7 @@ export default function StoneVisualizer() {
         hasMask={hasMask}
         visualizationComplete={visualizationComplete}
         isGenerating={isGenerating}
+        isTextureLoading={isTextureLoading}
         error={error}
         imageWarning={imageWarning}
       />
@@ -395,7 +405,13 @@ export default function StoneVisualizer() {
           </div>
         ) : (
           <div className="flex flex-col flex-1 gap-0">
-            <div className={visualizationComplete ? 'flex flex-col flex-1 min-h-0 overflow-hidden' : 'hidden'}>
+            <div className={visualizationComplete ? 'flex flex-col flex-1 min-h-0 overflow-hidden relative' : 'hidden'}>
+              {isTextureLoading && (
+                <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-stone-bg/95 backdrop-blur-sm rounded-xl">
+                  <div className="w-10 h-10 border-2 border-stone-light/40 border-t-stone-dark rounded-full animate-spin" />
+                  <p className="mt-3 text-stone-heading text-sm font-medium">Applying stone...</p>
+                </div>
+              )}
               <BeforeAfterView
                 beforeCanvasRef={beforeCanvasRef}
                 resultCanvasRef={resultCanvasRef}
