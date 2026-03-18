@@ -6,6 +6,7 @@ import { MIN_IMAGE_WIDTH, RECOMMENDED_IMAGE_WIDTH } from '@/constants/visualizer
 import { drawBrushOverlay } from '@/utils/canvasUtils';
 import BrushToolbar from './BrushToolbar';
 import BrushCanvas from './BrushCanvas';
+import ScrollDownIndicator from './ScrollDownIndicator';
 import BeforeAfterView from './BeforeAfterView';
 import VisualizerSidebar from './VisualizerSidebar';
 
@@ -30,6 +31,8 @@ export default function StoneVisualizer() {
   const [selectedStone, setSelectedStone] = useState<StoneProduct | null>(null);
   const [isDraggingSlider, setIsDraggingSlider] = useState(false);
   const [hasMask, setHasMask] = useState(false);
+  const [showScrollIndicator, setShowScrollIndicator] = useState(true);
+  const hasScrolledDownRef = useRef(false);
 
   const loadImage = useCallback((file: File) => {
     const isImage = file.type.startsWith('image/') ||
@@ -309,6 +312,22 @@ export default function StoneVisualizer() {
     }
   }, [visualizationComplete, buildResultImage]);
 
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const handleScroll = () => {
+      if (hasScrolledDownRef.current) return;
+      if (container.scrollTop >= 80) {
+        hasScrolledDownRef.current = true;
+        setShowScrollIndicator(false);
+      }
+    };
+
+    container.addEventListener('scroll', handleScroll, { passive: true });
+    return () => container.removeEventListener('scroll', handleScroll);
+  }, []);
+
   return (
     <div ref={containerRef} className="h-screen overflow-hidden max-lg:overflow-y-auto max-lg:min-h-[100dvh] bg-stone-bg flex flex-col lg:flex-row">
       <div className="max-lg:order-2 flex-shrink-0 w-full lg:w-auto lg:h-full lg:flex lg:flex-col lg:min-h-0 lg:overflow-hidden">
@@ -373,6 +392,7 @@ export default function StoneVisualizer() {
           </div>
         )}
       </div>
+      <ScrollDownIndicator visible={showScrollIndicator} />
     </div>
   );
 }
