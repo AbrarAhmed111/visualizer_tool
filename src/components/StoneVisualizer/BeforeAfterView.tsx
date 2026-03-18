@@ -26,14 +26,14 @@ export default function BeforeAfterView({
   return (
     <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
       <div className="flex-1 flex flex-col min-h-0 overflow-hidden rounded-xl border border-stone-light/30 bg-white shadow-sm">
-        <div className="px-3 py-2 bg-stone-light/10 border-b border-stone-light/20 flex items-center justify-between">
-          <span className="text-xs font-semibold uppercase tracking-wide text-stone-heading">
+        <div className="px-2 sm:px-3 py-1.5 sm:py-2 bg-stone-light/10 border-b border-stone-light/20 flex items-center justify-between gap-2">
+          <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wide text-stone-heading truncate">
             Drag to compare Before & After
           </span>
           <button
             type="button"
             onClick={onEditSelection}
-            className="text-xs text-stone-dark hover:underline"
+            className="text-[10px] sm:text-xs text-stone-dark hover:underline flex-shrink-0 py-2 px-1 touch-manipulation"
           >
             Edit selection
           </button>
@@ -68,10 +68,10 @@ export default function BeforeAfterView({
                 style={{ objectFit: 'contain' }}
               />
             </div>
-            <div className="absolute top-3 left-3 z-10 px-3 py-1.5 rounded-lg bg-stone-dark/90 text-white text-sm font-semibold uppercase tracking-wide">
+            <div className="absolute top-2 left-2 sm:top-3 sm:left-3 z-10 px-2 py-1 sm:px-3 sm:py-1.5 rounded-md sm:rounded-lg bg-stone-dark/90 text-white text-[10px] sm:text-sm font-semibold uppercase tracking-wide">
               Before
             </div>
-            <div className="absolute top-3 right-3 z-10 px-3 py-1.5 rounded-lg bg-stone-dark/90 text-white text-sm font-semibold uppercase tracking-wide">
+            <div className="absolute top-2 right-2 sm:top-3 sm:right-3 z-10 px-2 py-1 sm:px-3 sm:py-1.5 rounded-md sm:rounded-lg bg-stone-dark/90 text-white text-[10px] sm:text-sm font-semibold uppercase tracking-wide">
               After
             </div>
             <div

@@ -31,10 +31,10 @@ export default function BrushCanvas({
       onPointerLeave={onPointerLeave}
       onPointerCancel={onPointerCancel}
     >
-      <div className="relative flex items-center justify-center inline-block max-h-[80vh]">
+      <div className="relative flex items-center justify-center inline-block w-full max-h-[60vh] sm:max-h-[70vh] lg:max-h-[80vh]">
         <canvas
           ref={canvasRef}
-          className="max-w-[90%] h-auto block cursor-crosshair touch-none"
+          className="max-w-full w-full h-auto block cursor-crosshair touch-none"
           style={{ touchAction: 'none' }}
         />
         <canvas

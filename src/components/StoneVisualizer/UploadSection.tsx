@@ -24,7 +24,7 @@ export default function UploadSection({ onFileChange, onDrop, onDragOver }: Uplo
       onKeyDown={(e) => e.key === 'Enter' && handleClick()}
       onDrop={onDrop}
       onDragOver={onDragOver}
-      className="border-2 border-dashed border-stone-light/50 rounded-xl p-8 text-center hover:border-stone-dark/50 transition-colors cursor-pointer bg-stone-bg/50"
+      className="border-2 border-dashed border-stone-light/50 rounded-xl p-4 sm:p-6 lg:p-8 text-center hover:border-stone-dark/50 transition-colors cursor-pointer bg-stone-bg/50 touch-manipulation"
     >
       <input
         ref={inputRef}
@@ -33,11 +33,11 @@ export default function UploadSection({ onFileChange, onDrop, onDragOver }: Uplo
         onChange={onFileChange}
         className="sr-only"
       />
-      <Upload className="w-12 h-12 mx-auto text-stone-dark mb-3" />
-      <p className="text-sm font-medium text-stone-heading mb-1">
+      <Upload className="w-10 h-10 sm:w-12 sm:h-12 mx-auto text-stone-dark mb-2 sm:mb-3" />
+      <p className="text-xs sm:text-sm font-medium text-stone-heading mb-0.5 sm:mb-1">
         Drag or Click to Upload
       </p>
-      <p className="text-xs text-stone-light">
+      <p className="text-[10px] sm:text-xs text-stone-light">
         JPG, PNG • Min. 800px wide (1200px+ recommended)
       </p>
     </div>
