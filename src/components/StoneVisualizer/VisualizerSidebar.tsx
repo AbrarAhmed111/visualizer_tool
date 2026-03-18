@@ -54,6 +54,12 @@ export default function VisualizerSidebar({
             Your visualization
           </h2>
           <StoneSelection selectedStone={selectedStone} onSelectStone={onSelectStone} disabled={isTextureLoading} />
+          {isTextureLoading && (
+            <p className="text-sm text-stone-heading/70 flex items-center gap-2">
+              <span className="inline-block w-4 h-4 border-2 border-stone-light/40 border-t-stone-dark rounded-full animate-spin" />
+              Applying stone...
+            </p>
+          )}
         </div>
         <div className="flex-shrink-0 p-4 max-lg:p-3 pt-3 border-t border-stone-light/30 bg-white flex flex-col gap-2">
           <button
@@ -80,9 +86,7 @@ export default function VisualizerSidebar({
     <aside className="w-full lg:w-[420px] xl:w-[480px] flex-shrink-0 lg:flex-1 lg:min-h-0 border-t lg:border-t-0 lg:border-r border-stone-light/30 bg-white flex flex-col min-h-0 lg:overflow-hidden">
       <div className="scrollbar-thin flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-6 max-lg:p-4 flex flex-col gap-4 max-lg:gap-4">
         <Image src="/logo.png" alt="Logo" width={120} height={40} className="h-36 w-auto object-contain" />
-        <h2 className="text-lg font-semibold text-stone-heading uppercase tracking-wide">
-          Upload your space
-        </h2>
+        
 
 <UploadSection
         onFileChange={onFileChange}
@@ -94,11 +98,7 @@ export default function VisualizerSidebar({
         {hasImage && (
           <>
             <StoneSelection selectedStone={selectedStone} onSelectStone={onSelectStone} disabled={false} />
-            {!hasMask && (
-              <p className="text-sm text-stone-heading/70">
-                Paint the area with the brush where you want the stone effect.
-              </p>
-            )}
+            
           </>
         )}
 

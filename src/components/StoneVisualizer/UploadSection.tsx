@@ -35,17 +35,8 @@ export default function UploadSection({ onFileChange, onDrop, onDragOver, imageP
           onChange={onFileChange}
           className="sr-only"
         />
-        <div className="relative aspect-video max-h-24 max-lg:max-h-20 w-full">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={imagePreviewUrl}
-            alt="Uploaded preview"
-            className="w-full h-full object-contain"
-          />
-        </div>
-        <p className="text-xs font-medium text-stone-heading p-2 text-center">
-          Tap to change image
-        </p>
+       
+      
       </div>
     );
   }

@@ -97,15 +97,22 @@ export default function StoneVisualizer() {
     }
     setIsTextureLoading(true);
     const img = new Image();
+    const url = selectedStone.textureUrl;
+    const minLoadMs = 400; // Ensure loading is visible even when cached
+    const start = Date.now();
     img.onload = () => {
-      setTextureImage(img);
-      setIsTextureLoading(false);
+      const elapsed = Date.now() - start;
+      const remaining = Math.max(0, minLoadMs - elapsed);
+      setTimeout(() => {
+        setTextureImage(img);
+        setIsTextureLoading(false);
+      }, remaining);
     };
     img.onerror = () => {
       setTextureImage(null);
       setIsTextureLoading(false);
     };
-    img.src = selectedStone.textureUrl;
+    img.src = url;
   }, [selectedStone?.textureUrl]);
 
   const getCanvasPoint = useCallback((clientX: number, clientY: number) => {
