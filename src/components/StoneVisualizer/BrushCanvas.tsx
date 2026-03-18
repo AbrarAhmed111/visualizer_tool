@@ -1,10 +1,12 @@
 'use client';
 
 import { RefObject, useCallback } from 'react';
+import type { ImageDimensions } from '@/types/visualizer';
 
 interface BrushCanvasProps {
   canvasRef: RefObject<HTMLCanvasElement | null>;
   maskCanvasRef: RefObject<HTMLCanvasElement | null>;
+  imageDimensions: ImageDimensions | null;
   onPointerDown: (e: React.PointerEvent) => void;
   onPointerMove: (e: React.PointerEvent) => void;
   onPointerUp: (e: React.PointerEvent) => void;
@@ -17,6 +19,7 @@ interface BrushCanvasProps {
 export default function BrushCanvas({
   canvasRef,
   maskCanvasRef,
+  imageDimensions,
   onPointerDown,
   onPointerMove,
   onPointerUp,
@@ -58,47 +61,54 @@ export default function BrushCanvas({
 
   return (
     <div
-      className="flex-1 flex items-center justify-center overflow-hidden rounded-xl border border-stone-light/30 bg-white shadow-sm p-1 min-h-0"
-      style={{
-        touchAction: 'none',
-        maxHeight: '80vh',
-      }}
+      className="flex-1 flex flex-col min-h-0 overflow-hidden rounded-xl border border-stone-light/30 bg-white shadow-sm"
+      style={{ touchAction: 'none' }}
     >
-      <div className="relative inline-block max-h-[80vh] max-lg:max-h-[min(80vh,60dvh)]">
-        <canvas
-          ref={canvasRef}
-          className="max-w-full h-auto block cursor-crosshair max-lg:touch-none max-lg:select-none"
-          style={{ touchAction: 'none' }}
-        />
-        <canvas
-          ref={maskCanvasRef}
-          className="absolute top-0 left-0 pointer-events-none opacity-0"
-          style={{ width: '100%', height: '100%' }}
-          aria-hidden
-        />
-        {/* Desktop: pointer events */}
+      <div className="flex-1 relative overflow-hidden flex items-center justify-center p-1 min-h-0">
         <div
-          className="absolute inset-0 max-lg:hidden cursor-crosshair"
+          className="relative w-full h-full max-w-full flex items-center justify-center rounded-lg overflow-hidden max-h-[80vh] max-lg:max-h-[min(80vh,60dvh)]"
+          style={{
+            aspectRatio: imageDimensions
+              ? `${imageDimensions.width}/${imageDimensions.height}`
+              : '1',
+            minHeight: 0,
+          }}
+        >
+          <canvas
+            ref={canvasRef}
+            className="absolute inset-0 w-full h-full block cursor-crosshair max-lg:touch-none max-lg:select-none"
+            style={{ touchAction: 'none', objectFit: 'contain' }}
+          />
+        <canvas
+            ref={maskCanvasRef}
+            className="absolute top-0 left-0 pointer-events-none opacity-0"
+            style={{ width: '100%', height: '100%' }}
+            aria-hidden
+          />
+          {/* Desktop: pointer events */}
+          <div
+            className="absolute inset-0 max-lg:hidden cursor-crosshair"
           style={{ touchAction: 'none' }}
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
           onPointerLeave={onPointerLeave}
-        />
-        {/* Mobile: touch events - prevents scroll, supports drag & hold */}
-        <div
-          className="absolute inset-0 hidden max-lg:block"
-          style={{
-            touchAction: 'none',
-            WebkitTouchCallout: 'none',
-            WebkitUserSelect: 'none',
-            userSelect: 'none',
-          }}
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
-          onTouchCancel={handleTouchCancel}
-        />
+          />
+          {/* Mobile: touch events - prevents scroll, supports drag & hold */}
+          <div
+            className="absolute inset-0 hidden max-lg:block"
+            style={{
+              touchAction: 'none',
+              WebkitTouchCallout: 'none',
+              WebkitUserSelect: 'none',
+              userSelect: 'none',
+            }}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+            onTouchCancel={handleTouchCancel}
+          />
+        </div>
       </div>
     </div>
   );

@@ -89,11 +89,22 @@ export default function StoneVisualizer() {
     const canvas = canvasRef.current;
     if (!canvas || !containerRef.current) return null;
     const rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
+    const cw = canvas.width;
+    const ch = canvas.height;
+    // Account for object-fit: contain - image may have letterboxing
+    const scale = Math.min(rect.width / cw, rect.height / ch);
+    const displayedWidth = cw * scale;
+    const displayedHeight = ch * scale;
+    const offsetX = (rect.width - displayedWidth) / 2;
+    const offsetY = (rect.height - displayedHeight) / 2;
+    const relX = clientX - rect.left - offsetX;
+    const relY = clientY - rect.top - offsetY;
+    const x = Math.floor((relX / displayedWidth) * cw);
+    const y = Math.floor((relY / displayedHeight) * ch);
+    // Clamp to canvas bounds (clicks in letterbox area)
     return {
-      x: Math.floor((clientX - rect.left) * scaleX),
-      y: Math.floor((clientY - rect.top) * scaleY),
+      x: Math.max(0, Math.min(cw - 1, x)),
+      y: Math.max(0, Math.min(ch - 1, y)),
     };
   }, []);
 
@@ -380,6 +391,7 @@ export default function StoneVisualizer() {
               <BrushCanvas
                 canvasRef={canvasRef}
                 maskCanvasRef={maskCanvasRef}
+                imageDimensions={imageDimensions}
                 onPointerDown={handlePointerDown}
                 onPointerMove={handlePointerMove}
                 onPointerUp={handlePointerUp}
