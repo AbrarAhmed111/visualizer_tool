@@ -79,7 +79,7 @@ export default function BrushCanvas({
             className="absolute inset-0 w-full h-full block cursor-crosshair max-lg:touch-none max-lg:select-none"
             style={{ touchAction: 'none', objectFit: 'contain' }}
           />
-        <canvas
+          <canvas
             ref={maskCanvasRef}
             className="absolute top-0 left-0 pointer-events-none opacity-0"
             style={{ width: '100%', height: '100%' }}
@@ -88,13 +88,13 @@ export default function BrushCanvas({
           {/* Desktop: pointer events */}
           <div
             className="absolute inset-0 max-lg:hidden cursor-crosshair"
-          style={{ touchAction: 'none' }}
-          onPointerDown={onPointerDown}
-          onPointerMove={onPointerMove}
-          onPointerUp={onPointerUp}
-          onPointerLeave={onPointerLeave}
+            style={{ touchAction: 'none' }}
+            onPointerDown={onPointerDown}
+            onPointerMove={onPointerMove}
+            onPointerUp={onPointerUp}
+            onPointerLeave={onPointerLeave}
           />
-          {/* Mobile: touch events - prevents scroll, supports drag & hold */}
+          {/* Mobile: touch events */}
           <div
             className="absolute inset-0 hidden max-lg:block"
             style={{

@@ -5,7 +5,7 @@ A web-based stone visualizer tool for **Chase Materials Decorative Stone Supply*
 ## Features
 
 - **Upload your space** – Drag or click to upload JPG/PNG images (min. 800px wide, 1200px+ recommended)
-- **Stone selection** – Choose from 12 stone textures (Piedmont Gold Gravel, Arctic White Pebble, Crimson Quartz, and more)
+- **Stone selection** – Choose from 7+ stone textures (#57 Driveway Gravel, New York River Rock, Slate Chips, and more)
 - **Brush & mask** – Paint the area where you want the stone effect; use brush or erase mode
 - **Before & after** – Compare original and visualized images with a draggable slider
 - **Download** – Export your visualization as PNG
@@ -44,12 +44,31 @@ npm run build
 npm start
 ```
 
+## Wix Embedding
+
+Use the `/embed` route for iframe integration:
+
+```html
+<iframe src="https://your-domain.com/embed" width="100%" height="600"></iframe>
+```
+
+## Stone Textures
+
+Stone textures live in `public/stones/`. To convert HEIC files from `src/assets/img/stones/` to JPG:
+
+```bash
+npm run convert-stones
+```
+
+This converts all HEIC images to JPG and copies them to `public/stones/` with URL-safe names. To add new stones: place HEIC or JPG files in `src/assets/img/stones/`, run the script, then update `src/constants/stoneProducts.ts`.
+
 ## Tech Stack
 
 - **Next.js 15** – React framework
 - **TypeScript** – Type safety
 - **Tailwind CSS** – Styling
 - **Lucide React** – Icons
+- **HTML5 Canvas API** – Brush display and texture compositing (Konva available for future use)
 
 ## Project Structure
 

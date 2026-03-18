@@ -31,8 +31,10 @@ export default function StoneVisualizer() {
   const [selectedStone, setSelectedStone] = useState<StoneProduct | null>(null);
   const [isDraggingSlider, setIsDraggingSlider] = useState(false);
   const [hasMask, setHasMask] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
   const [showScrollIndicator, setShowScrollIndicator] = useState(true);
   const hasScrolledDownRef = useRef(false);
+  const [textureImage, setTextureImage] = useState<HTMLImageElement | null>(null);
 
   const loadImage = useCallback((file: File) => {
     const isImage = file.type.startsWith('image/') ||
@@ -85,6 +87,18 @@ export default function StoneVisualizer() {
 
   const handleDragOver = useCallback((e: React.DragEvent) => e.preventDefault(), []);
 
+  // Load texture when stone is selected - enables instant material switching
+  useEffect(() => {
+    if (!selectedStone?.textureUrl) {
+      setTextureImage(null);
+      return;
+    }
+    const img = new Image();
+    img.onload = () => setTextureImage(img);
+    img.onerror = () => setTextureImage(null);
+    img.src = selectedStone.textureUrl;
+  }, [selectedStone?.textureUrl]);
+
   const getCanvasPoint = useCallback((clientX: number, clientY: number) => {
     const canvas = canvasRef.current;
     if (!canvas || !containerRef.current) return null;
@@ -112,7 +126,8 @@ export default function StoneVisualizer() {
     const canvas = canvasRef.current;
     const maskCanvas = maskCanvasRef.current;
     if (!canvas || !maskCanvas || !image) return;
-    drawBrushOverlay(canvas, maskCanvas, image);
+    // Brush phase: gray overlay only. Stone texture appears only after Generate.
+    drawBrushOverlay(canvas, maskCanvas, image, null);
   }, [image]);
 
   const drawBrushStroke = useCallback(
@@ -156,8 +171,8 @@ export default function StoneVisualizer() {
     const resultCanvas = resultCanvasRef.current;
     const maskCanvas = maskCanvasRef.current;
     if (!resultCanvas || !maskCanvas || !image) return;
-    drawBrushOverlay(resultCanvas, maskCanvas, image);
-  }, [image]);
+    drawBrushOverlay(resultCanvas, maskCanvas, image, textureImage);
+  }, [image, textureImage]);
 
   const handlePointerDown = useCallback(
     (e: React.PointerEvent) => {
@@ -212,8 +227,18 @@ export default function StoneVisualizer() {
   );
 
   const handleGenerateVisualization = useCallback(() => {
-    setVisualizationComplete(true);
+    setIsGenerating(true);
   }, []);
+
+  // Loading animation: after delay, reveal result (keeps user's selected stone)
+  useEffect(() => {
+    if (!isGenerating) return;
+    const timer = setTimeout(() => {
+      setVisualizationComplete(true);
+      setIsGenerating(false);
+    }, 1800);
+    return () => clearTimeout(timer);
+  }, [isGenerating]);
 
   const handleSliderPointerDown = useCallback((e: React.PointerEvent) => {
     e.preventDefault();
@@ -356,6 +381,7 @@ export default function StoneVisualizer() {
         imagePreviewUrl={image?.src}
         hasMask={hasMask}
         visualizationComplete={visualizationComplete}
+        isGenerating={isGenerating}
         error={error}
         imageWarning={imageWarning}
       />
@@ -381,7 +407,14 @@ export default function StoneVisualizer() {
               />
             </div>
 
-            <div className={visualizationComplete ? 'hidden' : 'flex flex-col flex-1 min-h-0 overflow-hidden'}>
+            <div className={visualizationComplete ? 'hidden' : 'flex flex-col flex-1 min-h-0 overflow-hidden relative'}>
+              {isGenerating && (
+                <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-stone-bg/95 backdrop-blur-sm rounded-xl">
+                  <div className="w-12 h-12 border-4 border-stone-light/40 border-t-stone-dark rounded-full animate-spin" />
+                  <p className="mt-4 text-stone-heading font-medium">Generating your visualization...</p>
+                  <p className="mt-1 text-sm text-stone-heading/60">Choosing your stone</p>
+                </div>
+              )}
               <BrushToolbar
                 brushSize={brushSize}
                 isEraseMode={isEraseMode}
