@@ -86,6 +86,22 @@ export default function VisualizerSidebar({
         imagePreviewUrl={imagePreviewUrl}
       />
 
+        {hasImage && (
+          <div className="rounded-xl bg-stone-dark/5 border border-stone-dark/10 p-4 animate-fade-in">
+            <div className="flex items-center gap-2">
+              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-stone-dark text-white text-sm font-bold">
+                1
+              </span>
+              <p className="text-sm font-semibold text-stone-heading">
+                Select the area where you want stone
+              </p>
+            </div>
+            <p className="text-xs text-stone-heading/70 mt-2 ml-9">
+              Use the brush tool on your image to paint over driveways, patios, or walkways.
+            </p>
+          </div>
+        )}
+
         <StoneSelection selectedStone={selectedStone} onSelectStone={onSelectStone} disabled={!hasImage} />
 
         {error && (
@@ -100,7 +116,10 @@ export default function VisualizerSidebar({
       {hasImage && (
         <div className="flex-shrink-0 p-4 max-lg:p-3 pt-3 border-t border-stone-light/30 bg-white flex flex-col gap-2">
           {!hasMask && (
-            <p className="text-amber-600 text-sm">Paint the area where you want the stone effect before generating</p>
+            <p className="text-amber-600 text-sm flex items-center gap-2">
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-500/20 text-amber-600 text-xs font-bold">!</span>
+              Paint the area on your image first, then generate
+            </p>
           )}
           <button
             type="button"
