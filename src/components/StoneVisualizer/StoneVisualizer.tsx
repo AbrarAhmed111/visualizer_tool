@@ -297,7 +297,11 @@ export default function StoneVisualizer() {
         if (!container) return;
         const rect = container.getBoundingClientRect();
         const x = e.clientX - rect.left;
-        const percent = Math.max(0, Math.min(100, (x / rect.width) * 100));
+        // Keep split + dragger inside image: w-10 hit area ≈ 40px half = 20px
+        const halfHandlePx = 20;
+        const marginPct = rect.width > 0 ? (halfHandlePx / rect.width) * 100 : 0;
+        const raw = (x / rect.width) * 100;
+        const percent = Math.max(marginPct, Math.min(100 - marginPct, raw));
         setSliderPosition(percent);
       };
       const handleUp = () => setIsDraggingSlider(false);

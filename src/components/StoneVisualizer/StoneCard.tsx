@@ -36,7 +36,7 @@ export default function StoneCard({ product, isSelected, onSelect, disabled }: S
       </div>
       <div className="p-2 bg-white">
         <p className="text-sm font-medium text-stone-heading line-clamp-2" title={product.name}>{product.name}</p>
-        <p className="text-xs text-stone-heading/60">Seamless Texture</p>
+     
       </div>
     </button>
   );
