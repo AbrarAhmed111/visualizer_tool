@@ -4,6 +4,7 @@ import { useRef, useState, useCallback, useEffect } from 'react';
 import type { StoneProduct } from '@/constants/stoneProducts';
 import { MIN_IMAGE_WIDTH, RECOMMENDED_IMAGE_WIDTH } from '@/constants/visualizer';
 import { drawBrushOverlay } from '@/utils/canvasUtils';
+import { Paintbrush } from 'lucide-react';
 import BrushToolbar from './BrushToolbar';
 import BrushCanvas from './BrushCanvas';
 import ScrollDownIndicator from './ScrollDownIndicator';
@@ -444,7 +445,25 @@ export default function StoneVisualizer() {
                 onBrushSizeChange={setBrushSize}
                 onEraseModeChange={setIsEraseMode}
               />
-              <BrushCanvas
+              <div className="flex-1 relative min-h-0 flex flex-col">
+                {!hasMask && (
+                  <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none">
+                    <div className="rounded-xl bg-stone-dark/90 text-white px-5 py-4 shadow-lg max-w-[280px] mx-4 animate-fade-in">
+                      <p className="text-sm font-semibold text-center">
+                        Paint over the area where you want stone
+                      </p>
+                      <p className="text-xs text-white/80 text-center mt-1">
+                        Use the brush to mark driveways, patios, or walkways
+                      </p>
+                      <div className="flex justify-center mt-3">
+                        <span className="inline-flex h-10 w-10 items-center justify-center rounded-full border-2 border-white/50 bg-white/10">
+                          <Paintbrush className="w-5 h-5 text-white" />
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                <BrushCanvas
                 canvasRef={canvasRef}
                 maskCanvasRef={maskCanvasRef}
                 imageDimensions={imageDimensions}
@@ -456,6 +475,7 @@ export default function StoneVisualizer() {
                 onBrushMove={handleBrushMove}
                 onBrushUp={handlePointerUp}
               />
+              </div>
             </div>
           </div>
         )}

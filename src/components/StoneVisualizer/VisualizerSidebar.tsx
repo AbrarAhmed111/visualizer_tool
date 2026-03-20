@@ -86,21 +86,31 @@ export default function VisualizerSidebar({
     <aside className="w-full lg:w-[420px] xl:w-[480px] flex-shrink-0 lg:flex-1 lg:min-h-0 border-t lg:border-t-0 lg:border-r border-stone-light/30 bg-white flex flex-col min-h-0 lg:overflow-hidden">
       <div className="scrollbar-thin flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-6 max-lg:p-4 flex flex-col gap-4 max-lg:gap-4">
         <Image src="/logo.png" alt="Logo" width={120} height={40} className="h-36 w-auto object-contain" />
-        
 
-<UploadSection
-        onFileChange={onFileChange}
-        onDrop={onDrop}
-        onDragOver={onDragOver}
-        imagePreviewUrl={imagePreviewUrl}
-      />
+        <UploadSection
+          onFileChange={onFileChange}
+          onDrop={onDrop}
+          onDragOver={onDragOver}
+          imagePreviewUrl={imagePreviewUrl}
+        />
 
         {hasImage && (
-          <>
-            <StoneSelection selectedStone={selectedStone} onSelectStone={onSelectStone} disabled={false} />
-            
-          </>
+          <div className="rounded-xl bg-stone-dark/5 border border-stone-dark/10 p-4 animate-fade-in">
+            <div className="flex items-center gap-2">
+              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-stone-dark text-white text-sm font-bold">
+                1
+              </span>
+              <p className="text-sm font-semibold text-stone-heading">
+                Select the area where you want stone
+              </p>
+            </div>
+            <p className="text-xs text-stone-heading/70 mt-2 ml-9">
+              Use the brush tool on your image to paint over driveways, patios, or walkways.
+            </p>
+          </div>
         )}
+
+        <StoneSelection selectedStone={selectedStone} onSelectStone={onSelectStone} disabled={!hasImage} />
 
         {error && (
           <p className="text-red-500 text-sm">{error}</p>
@@ -114,7 +124,10 @@ export default function VisualizerSidebar({
       {hasImage && (
         <div className="flex-shrink-0 p-4 max-lg:p-3 pt-3 border-t border-stone-light/30 bg-white flex flex-col gap-2">
           {!hasMask && (
-            <p className="text-amber-600 text-sm">Paint the area and select a stone to enable</p>
+            <p className="text-amber-600 text-sm flex items-center gap-2">
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-500/20 text-amber-600 text-xs font-bold">!</span>
+              Paint the area on your image first, then generate
+            </p>
           )}
           <button
             type="button"
