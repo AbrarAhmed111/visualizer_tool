@@ -119,6 +119,7 @@ export default function VisualizerSidebar({
         {imageWarning && (
           <p className="text-amber-600 text-sm">{imageWarning}</p>
         )}
+
       </div>
 
       {hasImage && (

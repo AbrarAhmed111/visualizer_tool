@@ -3,13 +3,14 @@
 import { useRef, useState, useCallback, useEffect } from 'react';
 import type { StoneProduct } from '@/constants/stoneProducts';
 import { MIN_IMAGE_WIDTH, RECOMMENDED_IMAGE_WIDTH } from '@/constants/visualizer';
-import { drawBrushOverlay } from '@/utils/canvasUtils';
+import { drawBrushOverlay, type EdgeMode } from '@/utils/canvasUtils';
 import { Paintbrush } from 'lucide-react';
 import BrushToolbar from './BrushToolbar';
 import BrushCanvas from './BrushCanvas';
 import ScrollDownIndicator from './ScrollDownIndicator';
 import BeforeAfterView from './BeforeAfterView';
 import VisualizerSidebar from './VisualizerSidebar';
+import EdgeBlendToggle from './EdgeBlendToggle';
 
 export default function StoneVisualizer() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -37,6 +38,7 @@ export default function StoneVisualizer() {
   const hasScrolledDownRef = useRef(false);
   const [textureImage, setTextureImage] = useState<HTMLImageElement | null>(null);
   const [isTextureLoading, setIsTextureLoading] = useState(false);
+  const [edgeMode, setEdgeMode] = useState<EdgeMode>('soft');
 
   const loadImage = useCallback((file: File) => {
     const isImage = file.type.startsWith('image/') ||
@@ -144,8 +146,8 @@ export default function StoneVisualizer() {
     const maskCanvas = maskCanvasRef.current;
     if (!canvas || !maskCanvas || !image) return;
     // Brush phase: gray overlay only. Stone texture appears only after Generate.
-    drawBrushOverlay(canvas, maskCanvas, image, null);
-  }, [image]);
+    drawBrushOverlay(canvas, maskCanvas, image, null, { edgeMode });
+  }, [image, edgeMode]);
 
   const drawBrushStroke = useCallback(
     (x: number, y: number) => {
@@ -188,8 +190,8 @@ export default function StoneVisualizer() {
     const resultCanvas = resultCanvasRef.current;
     const maskCanvas = maskCanvasRef.current;
     if (!resultCanvas || !maskCanvas || !image) return;
-    drawBrushOverlay(resultCanvas, maskCanvas, image, textureImage);
-  }, [image, textureImage]);
+    drawBrushOverlay(resultCanvas, maskCanvas, image, textureImage, { edgeMode });
+  }, [image, textureImage, edgeMode]);
 
   const handlePointerDown = useCallback(
     (e: React.PointerEvent) => {
@@ -416,7 +418,10 @@ export default function StoneVisualizer() {
             </p>
           </div>
         ) : (
-          <div className="flex flex-col flex-1 gap-0">
+          <div className="flex flex-col flex-1 gap-0 min-h-0">
+            <div className="flex-shrink-0 mb-2">
+              <EdgeBlendToggle edgeMode={edgeMode} onEdgeModeChange={setEdgeMode} />
+            </div>
             <div className={visualizationComplete ? 'flex flex-col flex-1 min-h-0 overflow-hidden relative' : 'hidden'}>
               {isTextureLoading && (
                 <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-stone-bg/95 backdrop-blur-sm rounded-xl">
