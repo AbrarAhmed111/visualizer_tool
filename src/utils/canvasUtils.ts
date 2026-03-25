@@ -1,28 +1,4 @@
-/**
- * drawBrushOverlay.ts
- *
- * Composites a stone texture over a user-brushed region of a photo.
- *
- * This is a faithful refactor of the original v1 implementation that produced
- * the best visual output. The logic is preserved exactly — the only changes are:
- *
- *   1. All magic numbers extracted into OverlayConfig / DEFAULT_CONFIG
- *   2. Seam fix: each band's pattern is offset with setTransform so tile
- *      boundaries never align between adjacent bands (golden-ratio spacing)
- *   3. Each band tile is built at its exact required size — no downscaling
- *      from a large source, which was blurring small far-away stones
- *   4. Canvas pool to reduce GC pressure on repeated calls (material switching)
- *   5. edgeMode: 'soft' (blurred mask) vs 'hard' (blur + clip to brush)
- *
- * What is deliberately NOT changed from v1:
- *   - Stones are drawn at full opacity (alpha 1.0) — no ghosting
- *   - contrast(1.3) brightness(0.9) filter on each band tile — this is what
- *     makes stones look crisp and not washed out, do not change
- *   - 10% multiply shadow pass — preserves scene lighting cues
- *   - 6 bands (bumped to 8 for smoother perspective, same technique)
- *   - featherRadius auto-calculated from canvas width
- *   - No rotation, no tint gradient, no AO pass — these all made it worse
- */
+/** Composites a stone texture over a user-brushed region using banded perspective and configurable edge blending. */
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 
